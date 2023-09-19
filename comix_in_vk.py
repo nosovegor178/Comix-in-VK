@@ -52,7 +52,7 @@ def gets_the_upload_adress(access_token, group_id, version):
     group_id = int(group_id)
     payload = {
         'v': version,
-        'access_token': 1,
+        'access_token': access_token,
         'group_id': group_id
     }
     response = requests.get(url, params=payload)
