@@ -116,7 +116,6 @@ def post_comix_to_the_wall(access_token, group_id, version):
 
 if __name__ == '__main__':
     load_dotenv()
-    client_id = os.environ['VK_CLIENT_ID']
     vk_app_token = os.environ['VK_APP_TOKEN']
     vk_version = os.environ['VK_API_VERSION']
     vk_group_id = os.environ['VK_GROUP_ID']
