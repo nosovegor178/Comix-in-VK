@@ -130,8 +130,8 @@ def post_comiс_to_the_wall(access_token, group_id, version):
 if __name__ == '__main__':
     load_dotenv()
     vk_app_token = os.environ['VK_APP_TOKEN']
-    vk_version = os.environ['VK_API_VERSION']
+    current_vk_version = os.environ['VK_API_VERSION']
     vk_group_id = os.environ['VK_GROUP_ID']
 
     
-    post_comiс_to_the_wall(vk_app_token, vk_group_id, vk_version)
+    post_comiс_to_the_wall(vk_app_token, vk_group_id, current_vk_version)
