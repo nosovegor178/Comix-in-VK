@@ -13,52 +13,6 @@ def download_image(image_url, path):
     return path
 
 
-def gets_the_upload_adress(access_token, group_id, version):
-    url = 'https://api.vk.com/method/photos.getWallUploadServer'
-    version = version
-    group_id = int(group_id)
-    payload = {
-        'v': version,
-        'access_token': access_token,
-        'group_id': group_id
-    }
-    response = requests.get(url, params=payload)
-    response.raise_for_status()
-    answer = response.json()
-    adress_for_download = answer['response']['upload_url']
-    return adress_for_download
-
-
-def upload_photos_to_server(download_adress, file_name):
-    with open(file_name, 'rb') as file:
-        files = {
-            'photo': file
-        }
-        response = requests.post(download_adress, files=files)
-        response.raise_for_status()
-        downloaded_photo_info = response.json()
-        file.close()
-    return downloaded_photo_info
-
-
-def save_photo_to_album(photo, access_token, server, hash, group_id, version):
-    url = 'https://api.vk.com/method/photos.saveWallPhoto'
-    version = version
-    group_id = int(group_id)
-    payload = {
-        'group_id': group_id,
-        'photo': photo,
-        'server': server,
-        'hash': hash,
-        'access_token': access_token,
-        'v': version
-    }
-    response = requests.post(url, params=payload)
-    response.raise_for_status()
-    saved_photo_info = response.json()
-    return saved_photo_info
-
-
 def download_comix(comix_number):
     url = "https://xkcd.com/{}/info.0.json".format(comix_number)
     response = requests.get(url)
@@ -80,13 +34,73 @@ def gets_last_comix_number():
     return last_comix_number
 
 
-def post_comix_to_the_wall(message, access_token, media_id, 
-    owner_id, group_id, version):
+def gets_the_upload_adress(access_token, group_id, version):
+    url = 'https://api.vk.com/method/photos.getWallUploadServer'
+    version = version
+    group_id = int(group_id)
+    payload = {
+        'v': version,
+        'access_token': access_token,
+        'group_id': group_id
+    }
+    response = requests.get(url, params=payload)
+    response.raise_for_status()
+    answer = response.json()
+    adress_for_download = answer['response']['upload_url']
+    return adress_for_download
+
+
+def upload_photos_to_server(access_token, group_id, version):
+    file_name = 'comix.jpg'
+    upload_adress = gets_the_upload_adress(access_token, 
+        group_id, version)
+    with open(file_name, 'rb') as file:
+        files = {
+            'photo': file
+        }
+        response = requests.post(upload_adress, files=files)
+        response.raise_for_status()
+        downloaded_photo_info = response.json()
+        file.close()
+    return downloaded_photo_info
+
+
+def save_photo_to_album(access_token, group_id, version):
+    uploaded_photo_values = upload_photos_to_server(access_token, 
+        group_id, version)
+    uploaded_photo = uploaded_photo_values['photo']
+    photo_server = uploaded_photo_values['server']
+    photo_hash = uploaded_photo_values['hash']
+    url = 'https://api.vk.com/method/photos.saveWallPhoto'
+    version = version
+    group_id = int(group_id)
+    payload = {
+        'group_id': group_id,
+        'photo': uploaded_photo,
+        'server': photo_server,
+        'hash': photo_hash,
+        'access_token': access_token,
+        'v': version
+    }
+    response = requests.post(url, params=payload)
+    response.raise_for_status()
+    saved_photo_info = response.json()
+    return saved_photo_info
+
+
+def post_comix_to_the_wall(access_token, group_id, version):
+    last_comix_number = gets_last_comix_number()
+    random_comix_number = random.randint(0, last_comix_number)
+    message = download_comix(random_comix_number)
+    saved_photo = save_photo_to_album(vk_app_token, 
+        vk_group_id, vk_version)
+    photo_id = saved_photo['response'][0]['id']
+    owner_id = saved_photo['response'][0]['owner_id']
     version = version
     group_id = int(group_id) * -1
     from_group = 1
     url = 'https://api.vk.com/method/wall.post'
-    attachments = 'photo{}_{}'.format(owner_id, media_id)
+    attachments = 'photo{}_{}'.format(owner_id, photo_id)
     payload = {
         'message': message,
         'attachments': attachments,
@@ -106,24 +120,6 @@ if __name__ == '__main__':
     vk_app_token = os.environ['VK_APP_TOKEN']
     vk_version = os.environ['VK_API_VERSION']
     vk_group_id = os.environ['VK_GROUP_ID']
+
     
-    last_comix_number = gets_last_comix_number()
-    random_comix_number = random.randint(0, last_comix_number)
-    comment = download_comix(random_comix_number)
-    file_name = 'comix.jpg'
-    
-    upload_adress = gets_the_upload_adress(vk_app_token, 
-        vk_group_id, vk_version)
-    uploaded_photo_server_hash = upload_photos_to_server(upload_adress, 
-        file_name)
-    uploaded_photo = uploaded_photo_server_hash['photo']
-    photo_server = uploaded_photo_server_hash['server']
-    photo_hash = uploaded_photo_server_hash['hash']
-    saved_photo = save_photo_to_album(uploaded_photo, vk_app_token,
-                                           photo_server, photo_hash, 
-                                           vk_group_id, vk_version)
-    photo_id = saved_photo['response'][0]['id']
-    owner_id = saved_photo['response'][0]['owner_id']
-    
-    post_comix_to_the_wall(comment, vk_app_token, photo_id, 
-        owner_id, vk_group_id, vk_version)
+    post_comix_to_the_wall(vk_app_token, vk_group_id, vk_version)
