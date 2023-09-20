@@ -9,13 +9,10 @@ class ErrorWhenPostingComic(TypeError):
     pass
 
 
-def catches_errors(answer):
-    for essence, content in answer.items():
-        if essence == 'error':
-            os.remove("comiс.jpg")
-            raise ErrorWhenPostingComic(content['error_msg'])
+def catch_errors(essence, content):
+    if essence == 'error':
+        raise ErrorWhenPostingComic(content['error_msg'])
             
-
 
 def download_image(image_url, path):
     response = requests.get(image_url)
@@ -37,7 +34,7 @@ def download_comiс(comiс_number):
     return comment_for_comic
 
 
-def gets_last_comiс_number():
+def get_last_comiс_number():
     url = "https://xkcd.com/info.0.json"
     response = requests.get(url)
     response.raise_for_status()
@@ -46,10 +43,9 @@ def gets_last_comiс_number():
     return last_comiс_number
 
 
-def gets_the_upload_adress(access_token, group_id, version):
+def get_the_upload_address(access_token, group_id, version):
     url = 'https://api.vk.com/method/photos.getWallUploadServer'
     version = version
-    group_id = int(group_id)
     payload = {
         'v': version,
         'access_token': access_token,
@@ -58,24 +54,24 @@ def gets_the_upload_adress(access_token, group_id, version):
     response = requests.get(url, params=payload)
     response.raise_for_status()
     answer = response.json()
-    catches_errors(answer)
-    adress_for_download = answer['response']['upload_url']
-    return adress_for_download
+    for essence, content in answer.items():
+        catch_errors(essence, content)
+    address_for_upload = answer['response']['upload_url']
+    return address_for_upload
 
 
 def upload_photos_to_server(access_token, group_id, version):
     file_name = 'comiс.jpg'
-    upload_adress = gets_the_upload_adress(access_token, 
+    upload_address = get_the_upload_address(access_token, 
         group_id, version)
     with open(file_name, 'rb') as file:
         files = {
             'photo': file
         }
-        response = requests.post(upload_adress, files=files)
+        response = requests.post(upload_address, files=files)
+        file.close()
         response.raise_for_status()
         downloaded_photo_info = response.json()
-        file.close()
-    os.remove("comiс.jpg")
     return downloaded_photo_info
 
 
@@ -87,7 +83,6 @@ def save_photo_to_album(access_token, group_id, version):
     photo_hash = uploaded_photo_values['hash']
     url = 'https://api.vk.com/method/photos.saveWallPhoto'
     version = version
-    group_id = int(group_id)
     payload = {
         'group_id': group_id,
         'photo': uploaded_photo,
@@ -99,11 +94,13 @@ def save_photo_to_album(access_token, group_id, version):
     response = requests.post(url, params=payload)
     response.raise_for_status()
     saved_photo_info = response.json()
+    for essence, content in saved_photo_info.items():
+        catch_errors(essence, content)
     return saved_photo_info
 
 
 def post_comiс_to_the_wall(access_token, group_id, version):
-    last_comiс_number = gets_last_comiс_number()
+    last_comiс_number = get_last_comiс_number()
     random_comiс_number = random.randint(0, last_comiс_number)
     message = download_comiс(random_comiс_number)
     saved_photo = save_photo_to_album(vk_app_token, 
@@ -111,7 +108,6 @@ def post_comiс_to_the_wall(access_token, group_id, version):
     photo_id = saved_photo['response'][0]['id']
     owner_id = saved_photo['response'][0]['owner_id']
     version = version
-    group_id = int(group_id) * -1
     from_group = 1
     url = 'https://api.vk.com/method/wall.post'
     attachments = 'photo{}_{}'.format(owner_id, photo_id)
@@ -119,12 +115,15 @@ def post_comiс_to_the_wall(access_token, group_id, version):
         'message': message,
         'attachments': attachments,
         'access_token': access_token,
-        'owner_id': group_id,
+        'owner_id': -group_id,
         'from_group': from_group,
         'v': version
     }
     response = requests.post(url, params=payload)
+    answer = response.json()
     response.raise_for_status()
+    for essence, content in answer.items():
+        catch_errors(essence, content)
 
 
 if __name__ == '__main__':
@@ -132,6 +131,6 @@ if __name__ == '__main__':
     vk_app_token = os.environ['VK_APP_TOKEN']
     current_vk_version = os.environ['VK_API_VERSION']
     vk_group_id = os.environ['VK_GROUP_ID']
-
     
     post_comiс_to_the_wall(vk_app_token, vk_group_id, current_vk_version)
+    os.remove("comiс.jpg")
