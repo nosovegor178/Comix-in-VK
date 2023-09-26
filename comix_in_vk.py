@@ -99,12 +99,8 @@ def save_photo_to_album(access_token, group_id, version):
     return saved_photo_info
 
 
-def post_comiс_to_the_wall(access_token, group_id, version):
-    last_comiс_number = get_last_comiс_number()
-    random_comiс_number = random.randint(0, last_comiс_number)
-    message = download_comiс(random_comiс_number)
-    saved_photo = save_photo_to_album(vk_app_token, 
-        vk_group_id, vk_version)
+def post_comiс_to_the_wall(access_token, group_id, version, 
+    last_comiс_number, random_comiс_number, message, saved_photo):
     photo_id = saved_photo['response'][0]['id']
     owner_id = saved_photo['response'][0]['owner_id']
     version = version
@@ -115,7 +111,7 @@ def post_comiс_to_the_wall(access_token, group_id, version):
         'message': message,
         'attachments': attachments,
         'access_token': access_token,
-        'owner_id': -group_id,
+        'owner_id': '-{}'.format(group_id),
         'from_group': from_group,
         'v': version
     }
@@ -127,10 +123,18 @@ def post_comiс_to_the_wall(access_token, group_id, version):
 
 
 if __name__ == '__main__':
-    load_dotenv()
-    vk_app_token = os.environ['VK_APP_TOKEN']
-    current_vk_version = os.environ['VK_API_VERSION']
-    vk_group_id = os.environ['VK_GROUP_ID']
-    
-    post_comiс_to_the_wall(vk_app_token, vk_group_id, current_vk_version)
-    os.remove("comiс.jpg")
+    try:
+        load_dotenv()
+        vk_app_token = os.environ['VK_APP_TOKEN']
+        current_vk_version = os.environ['VK_API_VERSION']
+        vk_group_id = os.environ['VK_GROUP_ID']
+        last_comiс_number = get_last_comiс_number()
+        random_comiс_number = random.randint(0, last_comiс_number)
+        message = download_comiс(random_comiс_number)
+        saved_photo = save_photo_to_album(vk_app_token, 
+            vk_group_id, current_vk_version)
+        
+        post_comiс_to_the_wall(vk_app_token, vk_group_id, current_vk_version, 
+            last_comiс_number, random_comiс_number, message, saved_photo)
+    finally:
+        os.remove("comiс.jpg")
