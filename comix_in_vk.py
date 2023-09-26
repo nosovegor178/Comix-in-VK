@@ -71,8 +71,8 @@ def upload_photos_to_server(access_token, group_id, version):
         response = requests.post(upload_address, files=files)
         file.close()
         response.raise_for_status()
-        downloaded_photo_info = response.json()
-    return downloaded_photo_info
+        downloaded_photo = response.json()
+    return downloaded_photo
 
 
 def save_photo_to_album(access_token, group_id, version):
