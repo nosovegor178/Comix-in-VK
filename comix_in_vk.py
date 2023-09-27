@@ -69,9 +69,8 @@ def upload_photos_to_server(access_token, group_id, version):
             'photo': file
         }
         response = requests.post(upload_address, files=files)
-        file.close()
-        response.raise_for_status()
-        downloaded_photo = response.json()
+    response.raise_for_status()
+    downloaded_photo = response.json()
     return downloaded_photo
 
 
@@ -100,9 +99,9 @@ def save_photo_to_album(access_token, group_id, version):
 
 
 def post_comiс_to_the_wall(access_token, group_id, version, 
-    last_comiс_number, random_comiс_number, message, saved_photo):
-    photo_id = saved_photo['response'][0]['id']
-    owner_id = saved_photo['response'][0]['owner_id']
+    message, saved_photo):
+    photo_id = saved_photo['id']
+    owner_id = saved_photo['owner_id']
     version = version
     from_group = 1
     url = 'https://api.vk.com/method/wall.post'
@@ -133,8 +132,9 @@ if __name__ == '__main__':
         message = download_comiс(random_comiс_number)
         saved_photo = save_photo_to_album(vk_app_token, 
             vk_group_id, current_vk_version)
+        saved_photo = saved_photo['response'][0]
         
         post_comiс_to_the_wall(vk_app_token, vk_group_id, current_vk_version, 
-            last_comiс_number, random_comiс_number, message, saved_photo)
+            message, saved_photo)
     finally:
         os.remove("comiс.jpg")
