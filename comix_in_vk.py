@@ -99,9 +99,7 @@ def save_photo_to_album(access_token, group_id, version):
 
 
 def post_comiс_to_the_wall(access_token, group_id, version, 
-    message, saved_photo):
-    photo_id = saved_photo['id']
-    owner_id = saved_photo['owner_id']
+    message, photo_id, owner_id):
     version = version
     from_group = 1
     url = 'https://api.vk.com/method/wall.post'
@@ -133,6 +131,8 @@ if __name__ == '__main__':
         saved_photo = save_photo_to_album(vk_app_token, 
             vk_group_id, current_vk_version)
         saved_photo = saved_photo['response'][0]
+        photo_id = saved_photo['id']
+        owner_id = saved_photo['owner_id']
         
         post_comiс_to_the_wall(vk_app_token, vk_group_id, current_vk_version, 
             message, saved_photo)
